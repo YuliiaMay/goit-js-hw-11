@@ -1,3 +1,4 @@
+// --------------------------- IMPORT ------------------------------------
 import './css/styles.css';
 import ImgApiService from './js/img-service';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
@@ -5,6 +6,7 @@ import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 
 
+// -------------------------- VARIABLES ------------------------------------
 const refs = {
     form: document.querySelector('#search-form'),
     input: document.querySelector('input'),
@@ -15,58 +17,69 @@ const refs = {
 
 
 const imgApiService = new ImgApiService();
-let searchQuery = '';
+const simplelightbox = new SimpleLightbox('.gallery a', {
+    overlayOpacity: 0.9,
+    captionsData: "alt",
+    captionDelay: 250,
+    animationSpeed: 500,
+});
 
-// --------------------------------------------
+// let searchQuery = '';
 
-// --------------------------------------------
 
+// ---------------------------- EVENTS ------------------------------------
 refs.form.addEventListener('submit', onSearchImg);
-refs.loadBtn.addEventListener('click', onLoadMoreImg);
+refs.loadBtn.addEventListener('click', fetchImg);
 
 
+// --------------------------- FUNCTIONS ------------------------------------
 function onSearchImg(e) {
     e.preventDefault();
     
-
-    imgApiService.query = e.currentTarget.elements.searchQuery.value;
-
+    imgApiService.query = e.currentTarget.elements.searchQuery.value.trim();
     if (imgApiService.query === '') {
-        Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+        Notify.info('Please enter your query.');
         return;
     }
 
     imgApiService.resetPage();
-
-    imgApiService.fetchImg()
-        .then(hits => {
-            clearArticlesContainer();
-            appendArticlesMarkup(hits);
-            simplelightbox.refresh();
-            refs.loadBtn.classList.remove('is-hidden');
-
-            scrollPage();
-            // gallarySlider.refresh();
-        });
+    clearArticlesContainer();
+    fetchImg();
+    refs.loadBtn.classList.remove('is-hidden');
 };
 
 
-function onLoadMoreImg() {
+function fetchImg() {
     imgApiService.fetchImg()
-        .then(hits => {
-            appendArticlesMarkup(hits)
-            scrollPage();
-            simplelightbox.refresh();            
-        });
-    
-    // gallarySlider.refresh();
-}
+        .then(({ data }) => {
+            if (data.total === 0) {
+                console.log(data.total);
+                Notify.failure(`Sorry, there are no images matching your search query: ${imgApiService.query}. Please try again.`);
+                refs.loadBtn.classList.add('is-hidden');
+                return;
+            }
 
+            appendArticlesMarkup(data);
+            scrollPage();
+            simplelightbox.refresh();
+
+            const { totalHits } = data;
+
+            if (refs.gallery.children.length === totalHits ) {
+                Notify.info(`We're sorry, but you've reached the end of search results.`);
+                refs.loadBtn.classList.add('is-hidden');
+            } else {
+                Notify.success(`Hooray! We found ${totalHits} images.`);
+            }
+        })
+        .catch(error => {
+            console.log(error);
+        });
+}
 
 function appendArticlesMarkup(hits) {
     refs.gallery.insertAdjacentHTML('beforeend', createGallery(hits));
 }
-
 
 function createGallery({hits}) {
     const galleryMarkup = hits
@@ -100,26 +113,16 @@ function createGallery({hits}) {
     return galleryMarkup;
 }
 
-
 function clearArticlesContainer() {
     refs.gallery.innerHTML = '';
 }
 
-const simplelightbox = new SimpleLightbox('gallery a', {
-    overlayOpacity: 0.9,
-    captionsData: "alt",
-    captionDelay: 250,
-    animationSpeed: 500,
-});
-
-
 function scrollPage() {
-    const { height: cardHeight } = document
-        .querySelector(".gallery")
+    const { height: cardHeight } = refs.gallery
         .firstElementChild.getBoundingClientRect();
     
     window.scrollBy({
-        top: cardHeight * 2,
+        top: cardHeight * 0.5,
         behavior: "smooth",
     });
 };
