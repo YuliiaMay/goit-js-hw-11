@@ -11,8 +11,8 @@ const API_KEY = '33500508-b4271a177ba3ac813eaf35292&q';
 const PARAM = 'image_type=photo&orientation=horizontal&safesearch=true';
 
 
-// export default class ImgApiService {
-class ImgApiService {    
+export default class ImgApiService {
+// class ImgApiService {    
     constructor() {
         this.searchQuery = '';
         this.page = 1;
@@ -68,10 +68,6 @@ class ImgApiService {
 
     set query(newQuery) {
         this.searchQuery = newQuery;
-    }
-
-    setTotal(total) {
-        this.#totalPages = total;
     }
 };
 
