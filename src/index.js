@@ -53,7 +53,6 @@ function fetchImg() {
     imgApiService.fetchImg()
         .then(({ data }) => {
             if (data.total === 0) {
-                console.log(data.total);
                 Notify.failure(`Sorry, there are no images matching your search query: ${imgApiService.query}. Please try again.`);
                 refs.loadBtn.classList.add('is-hidden');
                 return;
